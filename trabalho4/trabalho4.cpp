@@ -4,9 +4,13 @@
 #endif
 #include <iostream>
 #include <cmath>
+#include <string>
 #include "GFFT.h"
 #include "GL/glui.h"
 #include "GL/glut.h"
+
+#include <cstdio>
+#include <limits>
 
 // Image Objects
 PixelLab *img = NULL;
@@ -40,6 +44,9 @@ pixel** slice(pixel **m, int sx, int sy, int width, int height) {
 	for (int y = 0; y < height; ++y) {
 		for (int x = 0; x < width; ++x) {
 			s[x][y].value = m[x + sx][y + sy].value;
+			s[x][y].R = m[x + sx][y + sy].R;
+			s[x][y].G = m[x + sx][y + sy].G;
+			s[x][y].B = m[x + sx][y + sy].B;
 		}
 	}
 
@@ -69,23 +76,64 @@ static void display(void) {
 
 void applyFFT() {
 	if (img) {
-		double *data = new double[imgMod->GetHeight() * imgMod->GetWidth()];
+
+		int size = imgMod->GetHeight() * imgMod->GetWidth();
+
+		double *data = new double[size];
 
 		for (int y = 0; y < imgMod->GetHeight(); y++) {
 			for (int x = 0; x < imgMod->GetWidth(); x++) {
-				data[x + y * imgMod->GetWidth()] = imgMod->GetGrayValue(x, y);
+				data[x + y * imgMod->GetWidth()] = imgMod->GetGrayValue(x, y)
+						/ 255.0;
 			}
 		}
 
-		GFFT<17, double> fourier;
+		GFFT<15, double> fourier;
 
 		fourier.fft(data);
 
+		double max = -std::numeric_limits<double>::infinity();
+
 		for (int y = 0; y < imgMod->GetHeight(); y++) {
 			for (int x = 0; x < imgMod->GetWidth(); x++) {
-				imgMod->SetGrayValue(x, y, data[x + y * imgMod->GetWidth()]);
+				if (data[x + y * imgMod->GetWidth()] > max) {
+					max = data[x + y * imgMod->GetWidth()];
+				}
 			}
 		}
+
+		const double c = 255 / (std::log(1 + max));
+
+//		double max = -std::numeric_limits<double>::infinity();
+//		double min = std::numeric_limits<double>::infinity();
+
+		for (int y = 0; y < imgMod->GetHeight(); y++) {
+			for (int x = 0; x < imgMod->GetWidth(); x++) {
+
+//				std::printf("%lf\n", data[x + y * imgMod->GetWidth()]);
+
+//				if (data[x + y * imgMod->GetWidth()] > max) {
+//					max = data[x + y * imgMod->GetWidth()];
+//				}
+//				if (data[x + y * imgMod->GetWidth()] < min) {
+//					min = data[x + y * imgMod->GetWidth()];
+//				}
+
+//				uByte temp =
+//						(uByte) ((data[x + y * imgMod->GetWidth()] / (size))
+//								* 255);
+
+				uByte temp = c * std::log(1 + data[x + y * imgMod->GetWidth()]);
+
+				imgMod->SetGrayValue(x, y, temp);
+
+				std::printf("(%d, %d) %d\n", y, x, (int) temp);
+			}
+		}
+
+//		std::printf("%lf, %lf\n",
+//				min / (imgMod->GetHeight() * imgMod->GetWidth()),
+//				max / (imgMod->GetHeight() * imgMod->GetWidth()));
 
 		free(data);
 	}
@@ -98,17 +146,19 @@ void applyIFFT() {
 }
 
 void shiftFFT() {
-  	PixelLab tmp, q0, q1, q2, q3;
+	PixelLab tmp, q0, q1, q2, q3;
 
-  	pixel **m;
+	pixel **m;
 
 	// first crop the image, if it has an odd number of rows or columns
 
-  	/*PixelLab oi;
-	oi.CreateImage(imgMod->GetWidth() & -2, imgMod->GetHeight() & -2, 1);*/
+	/*PixelLab oi;
+	 oi.CreateImage(imgMod->GetWidth() & -2, imgMod->GetHeight() & -2, 1);*/
 	imgMod->AllocatePixelMatrix(&m, imgMod->GetWidth(), imgMod->GetHeight());
 	imgMod->GetDataAsMatrix(m);
 	//image = image(Rect(0, 0, image.GetWidth() & -2, image.GetHeight() & -2));
+
+//	std::printf("(%d, %d, %d)\n", (int)m[0][0].R, (int)m[0][0].G, (int)m[0][0].B);
 
 	int cx = imgMod->GetWidth() / 2;
 	int cy = imgMod->GetHeight() / 2;
@@ -127,25 +177,24 @@ void shiftFFT() {
 	q3.CreateImage(cx, cy);
 	tmp.CreateImage(cx, cy);
 
-
 	q0.SetDataAsMatrix(slice(m, 0, 0, cx, cy));
 	q1.SetDataAsMatrix(slice(m, cx, 0, cx, cy));
 	q2.SetDataAsMatrix(slice(m, 0, cy, cx, cy));
 	q3.SetDataAsMatrix(slice(m, cx, cy, cx, cy));
 
 	/*q0.Copy(&tmp);
-	q3.Copy(&q0);
-	tmp.Copy(&q3);
+	 q3.Copy(&q0);
+	 tmp.Copy(&q3);
 
-	q1.Copy(&tmp);
-	q2.Copy(&q1);
-	tmp.Copy(&q2);*/
+	 q1.Copy(&tmp);
+	 q2.Copy(&q1);
+	 tmp.Copy(&q2);*/
 
 	for (int y = 0; y < cy; y++) {
 		for (int x = 0; x < cx; x++) {
 			imgMod->SetGrayValue(x, y, q3.GetGrayValue(x, y));
-			imgMod->SetGrayValue(x + cx, y, q2.GetGrayValue(x, y));
-			imgMod->SetGrayValue(x, y + cy, q1.GetGrayValue(x, y));
+			imgMod->SetGrayValue(x + cx, y, q1.GetGrayValue(x, y));
+			imgMod->SetGrayValue(x, y + cy, q2.GetGrayValue(x, y));
 			imgMod->SetGrayValue(x + cx, y + cy, q0.GetGrayValue(x, y));
 		}
 	}
@@ -167,7 +216,7 @@ void control(int value) {
 	case 3:
 		if (option == 0) {
 			shiftFFT();
-			//applyFFT();
+			applyFFT();
 		} else if (option == 1) {
 			applyIFFT();
 		}
@@ -189,7 +238,9 @@ static void key(unsigned char key, int x, int y) {
 
 int main(int argc, char *argv[]) {
 	glutInit(&argc, argv);
-	strcpy(input, "src/figs/lenaGray.png");
+//	strcpy(input, "src/figs/lenaGray.png");
+	strcpy(input, "src/figs/cln1.png");
+
 	strcpy(output, "src/figs/output.png");
 
 	img = new PixelLab(input);
@@ -234,9 +285,11 @@ int main(int argc, char *argv[]) {
 
 	GLUI_Panel *channel_panel = glui->add_panel((char *) "Transform");
 	//glui->add_statictext_to_panel( channel_panel, (char *) "Low-pass");
-	radio = glui->add_radiogroup_to_panel(channel_panel, &option, 3, (GLUI_Update_CB) NULL);
+	radio = glui->add_radiogroup_to_panel(channel_panel, &option, 3,
+			(GLUI_Update_CB) NULL);
 	glui->add_radiobutton_to_group(radio, (char *) "Fast Fourier Transform");
-	glui->add_radiobutton_to_group(radio, (char *) "Inverse Fast Fourier Transform");
+	glui->add_radiobutton_to_group(radio,
+			(char *) "Inverse Fast Fourier Transform");
 
 	glui->add_button((char *) "Apply", 3, control);
 	glui->add_button((char *) "Reset", 4, control);
