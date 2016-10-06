@@ -189,8 +189,8 @@ static void key(unsigned char key, int x, int y) {
 
 int main(int argc, char *argv[]) {
 	glutInit(&argc, argv);
-	strcpy(input, "figs/lenaGray.png");
-	strcpy(output, "figs/output.png");
+	strcpy(input, "src/figs/lenaGray.png");
+	strcpy(output, "src/figs/output.png");
 
 	img = new PixelLab(input);
 	imgMod = new PixelLab();

@@ -242,15 +242,15 @@ void motion1(int x, int y) {
 
 void init() {
 	img1 = new PixelLab();
-	img1->Read("figs/lenaGray.png");
-	currentImg1 = "figs/lenaGray.png";
+	img1->Read("src/figs/lenaGray.png");
+	currentImg1 = "src/figs/lenaGray.png";
 
 	width1 = img1->GetWidth();
 	height1 = img1->GetHeight();
 
 	img2 = new PixelLab();
-	img2->Read("figs/gearsGray.png");
-	currentImg2 = "figs/gearsGray.png";
+	img2->Read("src/figs/gearsGray.png");
+	currentImg2 = "src/figs/gearsGray.png";
 
 	width2 = img2->GetWidth();
 	height2 = img2->GetHeight();

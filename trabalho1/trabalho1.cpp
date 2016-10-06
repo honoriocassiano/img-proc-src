@@ -1,7 +1,7 @@
 /*
 	Name: test01.2.Two.Windows.cpp
 	Author: Rodrigo Luis de Souza da Silva
-	Author: Bruno José Dembogurski
+	Author: Bruno Josï¿½ Dembogurski
 	Date: 27/01/2011
 	Last Update: 27/01/2016
 	Description: Managing two windows using PixelLab.
@@ -335,7 +335,9 @@ void motion(int x, int y ) {
 
 void init() {
 	imgOriginal = new PixelLab();
-	imgOriginal->Read("figs/lenaGray.png");
+
+	// EndereÃ§ar todos os arquivos a partir da raiz
+	imgOriginal->Read("src/figs/lenaGray.png");
 
 	ptsx.push_back(0.0);
 	ptsy.push_back(0.0);
@@ -358,6 +360,8 @@ void init() {
 int main(int argc, char *argv[]) {
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
+
+	system("pwd");
 
 	// Init image objects
 	init();
